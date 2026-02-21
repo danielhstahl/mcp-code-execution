@@ -4,7 +4,7 @@ Yes, there are a million MCP Servers for sandboxed code execution.  But this one
 
 This is intended to run as a webservice on your local machine or local (trusted) network.  Code is executed in docker containers that do not run as root.
 
-## build image
+## Build image
 
 Make sure to build the docker images before running the mcp:
 
@@ -21,6 +21,10 @@ Test the images:
 `docker run -it -v $(pwd):/app -w /app rust-no-root cargo run`
 
 `docker run -it -v $(pwd):/app -e TYPE=default -w /app js-no-root ./integration-tests/helloworld.js`
+
+## Run MCP
+
+`cargo run`
 
 ## Accessing MCP
 
