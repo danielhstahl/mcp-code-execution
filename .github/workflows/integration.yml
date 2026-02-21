@@ -1,0 +1,55 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main]
+
+  pull_request:
+    branches: [main]
+
+jobs:
+  integration-test:
+    name: Run integration tests against MCP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: build python image
+        run: |
+          docker build -t python-no-root -f docker/python.Dockerfile ./docker
+
+      - name: Start mcp
+        run: cargo run & # nohup
+
+      - name: Wait for port 8000
+        run: |
+          # Loop until localhost:8000 returns a 200 OK
+          timeout 60s bash -c 'until curl -s localhost:8000; do sleep 1; done'
+
+      - name: Test tool list
+        run: |
+          tool_list=$(npx @modelcontextprotocol/inspector http://localhost:8000/mcp --cli --method tools/list)
+          result=$(echo $tool_list | jq -r '.tools  | length')
+          if [ $result != "3" ]; then
+            echo "Assertion failed: $result"
+            exit 1
+          fi
+
+      - name: Test python tool call
+        run: |
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=integration-tests/helloworld.py --tool-arg project_dir=$(pwd))
+          result=$(echo $tool_call | jq -r '.isError ')
+          if [ $result != "false" ]; then
+            echo "Assertion failed: $result"
+            exit 1
+          fi
+
+      - name: Test rust tool call
+        run: |
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_rust --tool-arg execution_type=test --tool-arg project_dir=$(pwd))
+          result=$(echo $tool_call | jq -r '.isError ')
+          if [ $result != "false" ]; then
+            echo "Assertion failed: $result"
+            exit 1
+          fi
