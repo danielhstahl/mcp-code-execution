@@ -19,6 +19,14 @@ jobs:
         run: |
           docker build -t python-no-root -f docker/python.Dockerfile ./docker
 
+      - name: build rust image
+        run: |
+          docker build -t rust-no-root -f docker/rust.Dockerfile ./docker
+
+      - name: build javascript image
+        run: |
+          docker build -t js-no-root -f docker/javascript.Dockerfile ./docker
+
       - name: Start mcp
         run: cargo run & # nohup
 
