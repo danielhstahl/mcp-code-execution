@@ -42,6 +42,7 @@ jobs:
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
+            echo "Tool call: $tool_call"
             exit 1
           fi
 
@@ -51,6 +52,7 @@ jobs:
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
+            echo "Tool call: $tool_call"
             exit 1
           fi
 
@@ -60,5 +62,6 @@ jobs:
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
+            echo "Tool call: $tool_call"
             exit 1
           fi
