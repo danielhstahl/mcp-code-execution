@@ -1,4 +1,5 @@
 mod compilation_service;
+mod javascript;
 mod mcp;
 mod python;
 mod rust;

@@ -12,12 +12,15 @@ Make sure to build the docker images before running the mcp:
 
 `docker build -t rust-no-root -f docker/rust.Dockerfile ./docker`
 
+`docker build -t js-no-root -f docker/javascript.Dockerfile ./docker`
+
 Test the images:
 
 `docker run -it -v $(pwd):/app -e TYPE=default -w /app python-no-root ./integration-tests/helloworld.py`
 
 `docker run -it -v $(pwd):/app -w /app rust-no-root cargo run`
 
+`docker run -it -v $(pwd):/app -e TYPE=default -w /app js-no-root ./integration-tests/helloworld.js`
 
 ## Accessing MCP
 

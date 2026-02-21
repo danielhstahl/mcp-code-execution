@@ -1,5 +1,6 @@
 use crate::compilation_service::{CompileService, DockerOutput, LANGUAGE};
-use crate::python::{DependencyType, PythonService};
+use crate::javascript::{DependencyType as JsDependencyType, JSService};
+use crate::python::{DependencyType as PyDependencyType, PythonService};
 use crate::rust::{ExecutionType, RustService};
 use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler,
@@ -21,12 +22,24 @@ pub struct PythonInput {
     #[schemars(
         description = "If using uv or requirements.txt.  If no dependencies, don't specify"
     )]
-    pub dependency_type: Option<DependencyType>,
+    pub dependency_type: Option<PyDependencyType>,
     #[schemars(
         description = "Path to the project.  This should be a folder/directory, not a file"
     )]
     pub project_dir: PathBuf,
     #[schemars(description = "File name within the project to execute.  Eg, `main.py`")]
+    pub entry_file: PathBuf,
+}
+
+#[derive(Debug, schemars::JsonSchema, Deserialize)]
+pub struct JavascriptInput {
+    #[schemars(description = "If using npm or yarn.  If no dependencies, don't specify")]
+    pub dependency_type: Option<JsDependencyType>,
+    #[schemars(
+        description = "Path to the project.  This should be a folder/directory, not a file"
+    )]
+    pub project_dir: PathBuf,
+    #[schemars(description = "File name within the project to execute.  Eg, `index.js`")]
     pub entry_file: PathBuf,
 }
 
@@ -80,6 +93,21 @@ impl CodeCompiler {
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 
+    #[tool(description = "run Javascript code")]
+    pub async fn run_javascript(
+        &self,
+        Parameters(JavascriptInput {
+            dependency_type,
+            project_dir,
+            entry_file,
+        }): Parameters<JavascriptInput>,
+    ) -> Result<CallToolResult, McpError> {
+        let service = JSService::new(dependency_type);
+        let result = service.compile_project(&project_dir, &Some(entry_file));
+        result
+            .map(|v| convert_docker_output_to_tool_result(v))
+            .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
     #[tool(description = "run Rust code")]
     pub async fn run_rust(
         &self,
