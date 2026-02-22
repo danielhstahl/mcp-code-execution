@@ -14,7 +14,6 @@ use rmcp::{
     tool, tool_handler, tool_router,
 };
 use serde::Deserialize;
-use serde_json;
 use std::path::PathBuf;
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
@@ -89,7 +88,7 @@ impl CodeCompiler {
         let service = PythonService::new(dependency_type);
         let result = service.compile_project(&project_dir, &Some(entry_file));
         result
-            .map(|v| convert_docker_output_to_tool_result(v))
+            .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 
@@ -105,7 +104,7 @@ impl CodeCompiler {
         let service = JSService::new(dependency_type);
         let result = service.compile_project(&project_dir, &Some(entry_file));
         result
-            .map(|v| convert_docker_output_to_tool_result(v))
+            .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
     #[tool(description = "run Rust code")]
@@ -119,7 +118,7 @@ impl CodeCompiler {
         let service = RustService::new(execution_type);
         let result = service.compile_project(&project_dir, &None);
         result
-            .map(|v| convert_docker_output_to_tool_result(v))
+            .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 
