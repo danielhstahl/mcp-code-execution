@@ -28,7 +28,9 @@ jobs:
           docker build -t js-no-root -f docker/javascript.Dockerfile ./docker
 
       - name: Start mcp
-        run: cargo run & # nohup
+        run: |
+          cargo build
+          cargo run & # nohup
 
       - name: Wait for port 8000
         run: |
