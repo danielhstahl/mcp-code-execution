@@ -79,7 +79,7 @@ fn compile_python_project(
 impl CompileService for PythonService {
     fn compile_project(
         &self,
-        path: &std::path::Path,
+        path: &Path,
         main_file: &Option<PathBuf>,
     ) -> io::Result<DockerOutput> {
         let main_file = main_file.as_ref().ok_or_else(|| {
