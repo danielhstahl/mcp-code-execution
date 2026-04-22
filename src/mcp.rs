@@ -139,7 +139,7 @@ impl ServerHandler for CodeCompiler {
                 .build(),
             server_info: Implementation::from_build_env(),
             instructions: Some(
-                "This server provides compilation and code execution tools. Tools: run_python, get_supported_languages."
+                "This server provides compilation and code execution tools. Tools: run_python, run_javascript, run_rust, get_supported_languages."
                     .to_string(),
             ),
         }

@@ -34,6 +34,8 @@ impl fmt::Display for DependencyType {
     }
 }
 
+//confusingly named because if not feature docker, then spawns docker
+#[cfg(not(feature = "docker"))]
 fn build_docker_args(
     work_dir_str: &str,
     file_name_str: &str,
@@ -57,6 +59,7 @@ fn build_docker_args(
 }
 
 //docker run -it --rm --name my-python-script -v "$PWD":/usr/src/app -w /usr/src/app python:3 python your_script.py
+#[cfg(not(feature = "docker"))]
 fn compile_python_project(
     work_dir: &Path,
     file_name: &Path,
@@ -76,6 +79,41 @@ fn compile_python_project(
     crate::compilation_service::run_docker_command(command)
 }
 
+#[cfg(feature = "docker")]
+fn compile_python_project(
+    work_dir: &Path,
+    file_name: &Path,
+    dependency_type: &Option<DependencyType>,
+) -> io::Result<DockerOutput> {
+    let file_name_str = file_name
+        .to_str()
+        .ok_or_else(|| io::Error::other("Supplied file name is not an actual path"))?;
+
+    let (binary, args) = match dependency_type.as_ref().unwrap_or(&DependencyType::Default) {
+        DependencyType::Default => {
+            Ok::<(&str, Vec<&str>), io::Error>(("python", vec![file_name_str]))
+        }
+        DependencyType::RequirementsTxt => {
+            let mut command = Command::new("python");
+            command.current_dir(work_dir);
+            command.args(vec!["-m", "pip", "install", "-r", "requirements.txt"]);
+            command.output()?;
+            Ok(("python", vec![file_name_str]))
+        }
+        DependencyType::Uv => {
+            let mut command = Command::new("uv");
+            command.current_dir(work_dir);
+            command.args(vec!["sync"]);
+            command.output()?;
+            Ok(("uv", vec!["run", "python", file_name_str]))
+        }
+    }?;
+    let mut command = Command::new(binary);
+    command.current_dir(work_dir);
+    command.args(args);
+    crate::compilation_service::run_docker_command(command)
+}
+
 impl CompileService for PythonService {
     fn compile_project(
         &self,
@@ -89,7 +127,7 @@ impl CompileService for PythonService {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "docker")))]
 mod tests {
     use super::*;
 

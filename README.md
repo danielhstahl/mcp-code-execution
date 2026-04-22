@@ -2,9 +2,14 @@
 
 Yes, there are a million MCP Servers for sandboxed code execution.  But this one is mine.
 
-This is intended to run as a webservice on your local machine or local (trusted) network.  Code is executed in docker containers that do not run as root.
+There are two modes.
 
-## Build image
+* Run the binary directly on your local machine or local (trusted) network.  Code is then executed in docker containers that do not run as root.
+* Run the MCP in an isolated docker container that directly runs code.  This is ideal when your entire AI harness is dockerized.
+
+## Run binary directly on local machine with docker images spun up
+
+### Build images
 
 Make sure to build the docker images before running the mcp:
 
@@ -22,9 +27,13 @@ Test the images:
 
 `docker run -it -v $(pwd):/app -e TYPE=default -w /app js-no-root ./integration-tests/helloworld.js`
 
-## Run MCP
+### Run MCP
 
 `cargo run`
+
+## Run MCP in isolated container
+
+TBD
 
 ## Accessing MCP
 
