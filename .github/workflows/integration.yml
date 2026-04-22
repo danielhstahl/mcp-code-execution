@@ -82,13 +82,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: build python image
+      - name: build comprehensive image
         run: |
           docker build -t main-docker -f docker/Dockerfile ./
 
       - name: Start mcp
         run: |
-          docker run -d main-docker -p 8000:8000 -v $(pwd)/integration-tests:/home/appuser/code_location
+          docker run -p 8000:8000 -v $(pwd)/integration-tests:/home/appuser/code_location -d main-docker
 
       - name: Wait for port 8000
         run: |
