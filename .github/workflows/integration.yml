@@ -88,8 +88,7 @@ jobs:
 
       - name: Start mcp
         run: |
-          # removing -d temporarily to see what error I get since I can't build this locally
-          docker run -p 8000:8000 -v $(pwd)/integration-tests:/home/appuser/code_location main-docker
+          docker run -p 8000:8000 -v $(pwd)/integration-tests:/app/code_location -d main-docker
 
       - name: Wait for port 8000
         run: |
@@ -107,7 +106,7 @@ jobs:
 
       - name: Test python tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=integration-tests/helloworld.py --tool-arg project_dir=$(pwd))
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=helloworld.py)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
@@ -117,7 +116,7 @@ jobs:
 
       - name: Test javascript tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_javascript --tool-arg entry_file=integration-tests/helloworld.js --tool-arg project_dir=$(pwd))
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_javascript --tool-arg entry_file=helloworld.js)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
@@ -127,7 +126,7 @@ jobs:
 
       - name: Test rust tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_rust --tool-arg execution_type=test --tool-arg project_dir=$(pwd))
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_rust --tool-arg execution_type=test)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"

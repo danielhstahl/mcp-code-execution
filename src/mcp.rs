@@ -22,6 +22,7 @@ pub struct PythonInput {
         description = "If using uv or requirements.txt.  If no dependencies, don't specify"
     )]
     pub dependency_type: Option<PyDependencyType>,
+    #[cfg(not(feature = "docker"))]
     #[schemars(
         description = "Path to the project.  This should be a folder/directory, not a file"
     )]
@@ -34,6 +35,7 @@ pub struct PythonInput {
 pub struct JavascriptInput {
     #[schemars(description = "If using npm or yarn.  If no dependencies, don't specify")]
     pub dependency_type: Option<JsDependencyType>,
+    #[cfg(not(feature = "docker"))]
     #[schemars(
         description = "Path to the project.  This should be a folder/directory, not a file"
     )]
@@ -48,6 +50,7 @@ pub struct RustInput {
         description = "If running tests or running the app.  Use \"run\" for executing code and \"test\" for testing code."
     )]
     pub execution_type: ExecutionType,
+    #[cfg(not(feature = "docker"))]
     #[schemars(
         description = "Path to the project.  This should be a folder/directory, not a file"
     )]
@@ -66,13 +69,79 @@ fn convert_docker_output_to_tool_result(docker_output: DockerOutput) -> CallTool
 
 pub struct CodeCompiler {
     tool_router: ToolRouter<Self>,
+    #[cfg(feature = "docker")]
+    path: PathBuf,
+}
+/*#[cfg(feature = "docker")]
+let result =
+    service.compile_project(&self.path, &Some(entry_file)); */
+
+#[cfg(feature = "docker")]
+#[tool_router]
+impl CodeCompiler {
+    pub fn new(project_location: &str) -> Self {
+        Self {
+            tool_router: Self::tool_router(),
+            path: PathBuf::from(project_location),
+        }
+    }
+
+    #[tool(description = "run Python code")]
+    pub async fn run_python(
+        &self,
+        Parameters(PythonInput {
+            dependency_type,
+            entry_file,
+        }): Parameters<PythonInput>,
+    ) -> Result<CallToolResult, McpError> {
+        let service = PythonService::new(dependency_type);
+        let result = service.compile_project(&self.path, &Some(entry_file));
+        result
+            .map(convert_docker_output_to_tool_result)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
+
+    #[tool(description = "run Javascript code")]
+    pub async fn run_javascript(
+        &self,
+        Parameters(JavascriptInput {
+            dependency_type,
+            entry_file,
+        }): Parameters<JavascriptInput>,
+    ) -> Result<CallToolResult, McpError> {
+        let service = JSService::new(dependency_type);
+        let result = service.compile_project(&self.path, &Some(entry_file));
+        result
+            .map(convert_docker_output_to_tool_result)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
+    #[tool(description = "run Rust code")]
+    pub async fn run_rust(
+        &self,
+        Parameters(RustInput { execution_type }): Parameters<RustInput>,
+    ) -> Result<CallToolResult, McpError> {
+        let service = RustService::new(execution_type);
+        let result = service.compile_project(&self.path, &None);
+        result
+            .map(convert_docker_output_to_tool_result)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
+
+    #[tool(description = "get supported languages")]
+    pub async fn get_supported_languages(&self) -> Result<CallToolResult, McpError> {
+        let json_result = serde_json::to_string(&LANGUAGE).unwrap();
+        Ok(CallToolResult::success(vec![Content::text(json_result)]))
+    }
 }
 
+#[cfg(not(feature = "docker"))]
 #[tool_router]
 impl CodeCompiler {
     pub fn new() -> Self {
         Self {
             tool_router: Self::tool_router(),
+            #[cfg(feature = "docker")]
+            path: PathBuf::from(project_location),
         }
     }
 
@@ -97,6 +166,7 @@ impl CodeCompiler {
         &self,
         Parameters(JavascriptInput {
             dependency_type,
+            #[cfg(not(feature = "docker"))]
             project_dir,
             entry_file,
         }): Parameters<JavascriptInput>,
@@ -112,6 +182,7 @@ impl CodeCompiler {
         &self,
         Parameters(RustInput {
             execution_type,
+            #[cfg(not(feature = "docker"))]
             project_dir,
         }): Parameters<RustInput>,
     ) -> Result<CallToolResult, McpError> {

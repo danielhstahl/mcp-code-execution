@@ -14,7 +14,11 @@ use tracing_subscriber::{
     {self},
 };
 
-const BIND_ADDRESS: &str = "127.0.0.1:8000";
+const BIND_ADDRESS: &str = "0.0.0.0:8000";
+
+//see docker/Dockerfile
+#[cfg(feature = "docker")]
+const PROJECT_PATH: &str = "/app/code_location";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -28,6 +32,9 @@ async fn main() -> anyhow::Result<()> {
     let ct = tokio_util::sync::CancellationToken::new();
 
     let service = StreamableHttpService::new(
+        #[cfg(feature = "docker")]
+        || Ok(CodeCompiler::new(PROJECT_PATH)),
+        #[cfg(not(feature = "docker"))]
         || Ok(CodeCompiler::new()),
         LocalSessionManager::default().into(),
         StreamableHttpServerConfig {
@@ -38,6 +45,7 @@ async fn main() -> anyhow::Result<()> {
 
     let router = axum::Router::new().nest_service("/mcp", service);
     let tcp_listener = tokio::net::TcpListener::bind(BIND_ADDRESS).await?;
+    tracing::info!("Server listening on {}", BIND_ADDRESS);
     let _ = axum::serve(tcp_listener, router)
         .with_graceful_shutdown(async move {
             tokio::signal::ctrl_c().await.unwrap();
