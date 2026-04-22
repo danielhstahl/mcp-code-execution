@@ -8,7 +8,7 @@ RUN cargo build --release --features docker
 ## main docker to actually run this stuff
 FROM nikolaik/python-nodejs:python3.14-nodejs25-alpine
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-RUN mkdir -p /home/appuser/code_location && chown -R appuser:appgroup /home/node/code_location && chmod 700 /home/node/code_location
+RUN mkdir -p /home/appuser/code_location && chown -R appuser:appgroup /home/appuser/code_location && chmod 700 /home/appuser/code_location
 WORKDIR /app
 USER appuser
 COPY --from=builder --chown=appuser:appgroup /app/target/release/code-exec-mcp /app/code-exec-mcp
