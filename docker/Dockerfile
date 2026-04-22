@@ -14,7 +14,7 @@ RUN mkdir -p /home/appuser/code_location && chown -R appuser:appgroup /home/appu
 WORKDIR /app
 USER appuser
 COPY --from=builder --chown=appuser:appgroup /app/target/release/code-exec-mcp /app/code-exec-mcp
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="$HOME/.cargo/bin:${PATH}"
 CMD ["./code-exec-mcp"]
 #RUN source "$HOME/.cargo/env"
