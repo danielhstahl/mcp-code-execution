@@ -88,7 +88,8 @@ jobs:
 
       - name: Start mcp
         run: |
-          docker run -p 8000:8000 -v $(pwd)/integration-tests:/home/appuser/code_location -d main-docker
+          # removing -d temporarily to see what error I get since I can't build this locally
+          docker run -p 8000:8000 -v $(pwd)/integration-tests:/home/appuser/code_location main-docker
 
       - name: Wait for port 8000
         run: |
