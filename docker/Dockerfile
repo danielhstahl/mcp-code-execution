@@ -7,6 +7,8 @@ RUN cargo build --release --features docker
 
 ## main docker to actually run this stuff
 FROM nikolaik/python-nodejs:python3.14-nodejs25-alpine
+RUN apk update
+RUN apk add --no-cache curl gcc musl-dev pkgconf build-base
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 RUN mkdir -p /home/appuser/code_location && chown -R appuser:appgroup /home/appuser/code_location && chmod 700 /home/appuser/code_location
 WORKDIR /app
