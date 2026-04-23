@@ -129,7 +129,8 @@ jobs:
       - name: Test rust tool call
         run: |
           cp -r src integration-tests
-          cp cargo.* integration-tests
+          cp cargo.lock integration-tests
+          cp cargo.toml integration-tests
           tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_rust --tool-arg execution_type=test --tool-arg project_dir=.)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
