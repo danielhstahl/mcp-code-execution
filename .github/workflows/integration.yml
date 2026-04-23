@@ -88,14 +88,8 @@ jobs:
 
       - name: Start mcp
         run: |
-          # use --user to allow github action to write to directory (needed for rust integration test)
-          # For normal use the --user and extra -e flags are not needed
           docker run -p 8000:8000 \
-            -v $(pwd):/app/code_location -d \
-            --user $(id -u):$(id -g) \
-            -e HOME=/app \
-            -e RUSTUP_HOME=/app/.rustup \
-            -e CARGO_HOME=/app/.cargo \
+            -v $(pwd)/integration-tests:/app/code_location -d \
             main-docker
 
       - name: Wait for port 8000
@@ -114,7 +108,7 @@ jobs:
 
       - name: Test python tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=helloworld.py --tool-arg project_dir=integration-tests)
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=helloworld.py --tool-arg project_dir=.)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
@@ -124,7 +118,7 @@ jobs:
 
       - name: Test javascript tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_javascript --tool-arg entry_file=helloworld.js --tool-arg project_dir=integration-tests)
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_javascript --tool-arg entry_file=helloworld.js --tool-arg project_dir=.)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
@@ -134,6 +128,8 @@ jobs:
 
       - name: Test rust tool call
         run: |
+          cp -r src integration-tests
+          cp cargo.* integration-tests
           tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_rust --tool-arg execution_type=test --tool-arg project_dir=.)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
