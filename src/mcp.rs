@@ -208,17 +208,10 @@ impl CodeCompiler {
 #[tool_handler]
 impl ServerHandler for CodeCompiler {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo {
-            protocol_version: ProtocolVersion::V_2025_06_18,
-            capabilities: ServerCapabilities::builder()
-                .enable_tools()
-                .build(),
-            server_info: Implementation::from_build_env(),
-            instructions: Some(
-                "This server provides compilation and code execution tools. Tools: run_python, run_javascript, run_rust, get_supported_languages."
-                    .to_string(),
-            ),
-        }
+        ServerInfo::new(ServerCapabilities::builder()
+            .enable_tools()
+            .build()).with_instructions("This server provides compilation and code execution tools. Tools: run_python, run_javascript, run_rust, get_supported_languages.")
+            .with_server_info(Implementation::from_build_env()).with_protocol_version(ProtocolVersion::V_2025_06_18)
     }
 
     async fn initialize(
