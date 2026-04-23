@@ -89,7 +89,14 @@ jobs:
       - name: Start mcp
         run: |
           # use --user to allow github action to write to directory (needed for rust integration test)
-          docker run -p 8000:8000 -v $(pwd):/app/code_location -d --user $(id -u):$(id -g) main-docker
+          # For normal use the --user and extra -e flags are not needed
+          docker run -p 8000:8000 \
+            -v $(pwd):/app/code_location -d \
+            --user $(id -u):$(id -g) \
+            -e HOME=/app \
+            -e RUSTUP_HOME=/app/.rustup \
+            -e CARGO_HOME=/app/.cargo \
+            main-docker
 
       - name: Wait for port 8000
         run: |
