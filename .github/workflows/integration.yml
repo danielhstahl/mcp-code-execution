@@ -89,7 +89,9 @@ jobs:
       - name: Start mcp
         run: |
           docker run -p 8000:8000 \
-            -v $(pwd)/integration-tests:/app/code_location -d \
+            -v $(pwd):/app/code_location \
+            -e CARGO_TARGET_DIR=/tmp/target \
+            -d \
             main-docker
 
       - name: Wait for port 8000
@@ -108,7 +110,7 @@ jobs:
 
       - name: Test python tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=helloworld.py --tool-arg project_dir=.)
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=helloworld.py --tool-arg project_dir=integration-tests)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
@@ -118,7 +120,7 @@ jobs:
 
       - name: Test javascript tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_javascript --tool-arg entry_file=helloworld.js --tool-arg project_dir=.)
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_javascript --tool-arg entry_file=helloworld.js --tool-arg project_dir=integration-tests)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
@@ -128,9 +130,6 @@ jobs:
 
       - name: Test rust tool call
         run: |
-          cp -r src integration-tests
-          cp Cargo.lock integration-tests
-          cp Cargo.toml integration-tests
           tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_rust --tool-arg execution_type=test --tool-arg project_dir=.)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
