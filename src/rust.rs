@@ -33,6 +33,8 @@ impl fmt::Display for ExecutionType {
     }
 }
 
+//confusingly named because if not feature docker, then spawns docker
+#[cfg(not(feature = "docker"))]
 fn build_docker_args(work_dir_str: &str, execution_type: &ExecutionType) -> Vec<String> {
     vec![
         "run".to_string(),
@@ -47,6 +49,7 @@ fn build_docker_args(work_dir_str: &str, execution_type: &ExecutionType) -> Vec<
     ]
 }
 
+#[cfg(not(feature = "docker"))]
 fn compile_rust_project(
     work_dir: &Path,
     execution_type: &ExecutionType,
@@ -63,6 +66,17 @@ fn compile_rust_project(
     crate::compilation_service::run_docker_command(command)
 }
 
+#[cfg(feature = "docker")]
+fn compile_rust_project(
+    work_dir: &Path,
+    execution_type: &ExecutionType,
+) -> io::Result<DockerOutput> {
+    let mut command = Command::new("cargo");
+    command.current_dir(work_dir);
+    command.args(vec![execution_type.to_string()]);
+    crate::compilation_service::run_docker_command(command)
+}
+
 impl CompileService for RustService {
     fn compile_project(
         &self,
@@ -73,10 +87,9 @@ impl CompileService for RustService {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "docker")))]
 mod tests {
     use super::*;
-
     #[test]
     fn test_build_docker_args_run() {
         let args = build_docker_args("/mock/path", &ExecutionType::Run);
