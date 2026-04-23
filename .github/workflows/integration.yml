@@ -88,7 +88,7 @@ jobs:
 
       - name: Start mcp
         run: |
-          docker run -p 8000:8000 -v $(pwd)/integration-tests:/app/code_location -d main-docker
+          docker run -p 8000:8000 -v $(pwd):/app/code_location -d main-docker
 
       - name: Wait for port 8000
         run: |
@@ -106,7 +106,7 @@ jobs:
 
       - name: Test python tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=helloworld.py)
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_python --tool-arg entry_file=helloworld.py --tool-arg project_dir=integration-tests)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
@@ -116,7 +116,7 @@ jobs:
 
       - name: Test javascript tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_javascript --tool-arg entry_file=helloworld.js)
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_javascript --tool-arg entry_file=helloworld.js --tool-arg project_dir=integration-tests)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
@@ -126,7 +126,7 @@ jobs:
 
       - name: Test rust tool call
         run: |
-          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_rust --tool-arg execution_type=test)
+          tool_call=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/call --tool-name run_rust --tool-arg execution_type=test --tool-arg project_dir=.)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
             echo "Assertion failed: $result"
