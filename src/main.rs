@@ -37,6 +37,11 @@ async fn main() -> anyhow::Result<()> {
         #[cfg(not(feature = "docker"))]
         || Ok(CodeCompiler::new()),
         LocalSessionManager::default().into(),
+        #[cfg(feature = "docker")]
+        StreamableHttpServerConfig::default()
+            .disable_allowed_hosts()
+            .with_cancellation_token(ct.child_token()),
+        #[cfg(not(feature = "docker"))]
         StreamableHttpServerConfig::default().with_cancellation_token(ct.child_token()),
     );
 

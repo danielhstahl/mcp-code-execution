@@ -35,7 +35,7 @@ Test the images:
 
 ## Run MCP in isolated container
 
-This option makes the most sense if you are running a code compilation harness as part of a larger deployment (eg, with docker compose).
+This option makes the most sense if you are running a code compilation harness as part of a larger deployment (eg, with docker compose).  Note that in this mode the MCP server will allow all hosts: make sure to set a firewall to restrict access.
 
 ### Build image
 
