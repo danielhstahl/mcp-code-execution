@@ -23,4 +23,5 @@ jobs:
         run: cargo build
 
       - name: test
-        run: cargo test
+        # single thread so that file related tests don't interact with each other
+        run: cargo test  -- --test-threads=1

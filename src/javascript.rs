@@ -7,14 +7,14 @@ use crate::registry::REGISTRY;
 use std::io;
 use std::path::PathBuf;
 #[cfg(not(feature = "docker"))]
-use std::process::Command;
+use tokio::process::Command;
 
 //confusingly named because if not feature docker, then spawns docker
 #[cfg(not(feature = "docker"))]
 fn build_docker_args(
     working_dir: PathBuf,
     command: &NodeCommand,
-    args: &str,
+    args: &[String],
 ) -> Result<Vec<String>, CLIError> {
     let registry = match command {
         NodeCommand::Npm => &REGISTRY.npm,
@@ -27,8 +27,7 @@ fn build_docker_args(
             "Supplied working directory is not an actual path",
         ))
     })?;
-    let args_as_vec: Vec<&str> = args.split(" ").collect();
-    let result = CodeCommand::new(registry, &args_as_vec, working_dir)?;
+    let result = CodeCommand::new(registry, args, working_dir)?;
     let mut docker_args = vec![
         "run".to_string(),
         "--rm".to_string(),
@@ -44,31 +43,30 @@ fn build_docker_args(
 }
 
 #[cfg(not(feature = "docker"))]
-pub fn compile_javascript_project(
+pub async fn compile_javascript_project(
     work_dir: PathBuf,
     command: &NodeCommand,
-    args: &str,
+    args: &[String],
 ) -> Result<DockerOutput, CLIError> {
     let docker_args = build_docker_args(work_dir, command, args)?;
     let mut command = Command::new("docker");
     command.args(docker_args);
-    crate::compilation_service::handle_command_output(command.output()?)
+    crate::compilation_service::handle_command_output(command.output().await?)
 }
 
 #[cfg(feature = "docker")]
-pub fn compile_javascript_project(
+pub async fn compile_javascript_project(
     work_dir: PathBuf,
     command: &NodeCommand,
-    args: &str,
+    args: &[String],
 ) -> Result<DockerOutput, CLIError> {
     let registry = match command {
         NodeCommand::Npm => &REGISTRY.npm,
         NodeCommand::Yarn => &REGISTRY.yarn,
         NodeCommand::Node => &REGISTRY.node,
     };
-    let args_as_vec: Vec<&str> = args.split(" ").collect();
-    let result = CodeCommand::new(registry, &args_as_vec, work_dir)?;
-    let output = result.execute()?;
+    let result = CodeCommand::new(registry, args, work_dir)?;
+    let output = result.execute().await?;
     crate::compilation_service::handle_command_output(output)
 }
 

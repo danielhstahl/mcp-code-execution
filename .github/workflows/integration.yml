@@ -53,7 +53,7 @@ jobs:
             --method tools/call \
             --tool-name run_python \
             --tool-arg command=python \
-            --tool-arg args=integration-tests/helloworld.py \
+            --tool-arg args='["integration-tests/helloworld.py"]' \
             --tool-arg project_dir=$(pwd))
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
@@ -69,7 +69,7 @@ jobs:
             --method tools/call \
             --tool-name run_javascript \
             --tool-arg command=node \
-            --tool-arg args=integration-tests/helloworld.js \
+            --tool-arg args='["integration-tests/helloworld.js"]' \
             --tool-arg project_dir=$(pwd))
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
@@ -85,7 +85,7 @@ jobs:
             --method tools/call \
             --tool-name run_rust \
             --tool-arg command=cargo \
-            --tool-arg args=test \
+            --tool-arg args='["test"]' \
             --tool-arg project_dir=$(pwd))
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
@@ -133,7 +133,7 @@ jobs:
             --method tools/call \
             --tool-name run_python \
             --tool-arg command=python \
-            --tool-arg args=helloworld.py \
+            --tool-arg args='["helloworld.py"]' \
             --tool-arg project_dir=integration-tests)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
@@ -149,7 +149,7 @@ jobs:
             --method tools/call \
             --tool-name run_javascript \
             --tool-arg command=node \
-            --tool-arg args=helloworld.js \
+            --tool-arg args='["helloworld.js"]' \
             --tool-arg project_dir=integration-tests)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
@@ -165,7 +165,7 @@ jobs:
             --method tools/call \
             --tool-name run_rust \
             --tool-arg command=cargo \
-            --tool-arg args=test \
+            --tool-arg args='["test"]' \
             --tool-arg project_dir=.)
           result=$(echo $tool_call | jq -r '.isError ')
           if [ $result != "false" ]; then
