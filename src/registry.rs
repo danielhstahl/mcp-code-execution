@@ -35,11 +35,15 @@ pub static REGISTRY: LazyLock<CommandRegistry> = LazyLock::new(|| CommandRegistr
     },
     node: AllowedCommand {
         bin: "node",
-        arg_constraints: vec![ArgConstraint::Pattern(FILE_NAME.clone())],
+        arg_constraints: vec![ArgConstraint::WorkspacePath(Box::new(
+            ArgConstraint::Pattern(FILE_NAME.clone()),
+        ))],
     },
     python: AllowedCommand {
         bin: "python",
-        arg_constraints: vec![ArgConstraint::Pattern(FILE_NAME.clone())],
+        arg_constraints: vec![ArgConstraint::WorkspacePath(Box::new(
+            ArgConstraint::Pattern(FILE_NAME.clone()),
+        ))],
     },
     uv: AllowedCommand {
         bin: "uv",
@@ -50,10 +54,9 @@ pub static REGISTRY: LazyLock<CommandRegistry> = LazyLock::new(|| CommandRegistr
     },
     pytest: AllowedCommand {
         bin: "pytest",
-        arg_constraints: vec![
-            //ArgConstraint::Optional(Box::new(ArgConstraint::WorkspacePath)),
-            ArgConstraint::Optional(Box::new(ArgConstraint::Pattern(SCRIPT_NAME.clone()))),
-        ],
+        arg_constraints: vec![ArgConstraint::Optional(Box::new(ArgConstraint::Pattern(
+            SCRIPT_NAME.clone(),
+        )))],
     },
     cargo: AllowedCommand {
         bin: "cargo",

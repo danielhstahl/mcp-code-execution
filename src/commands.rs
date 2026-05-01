@@ -13,7 +13,7 @@ impl CodeCommand {
     /// matched positionally against `spec.arg_constraints`.
     pub fn new(
         spec: &AllowedCommand,
-        args: &[&str],
+        args: &[String],
         working_dir: PathBuf,
     ) -> Result<Self, CLIError> {
         // Validate arg count: required slots must be filled,
@@ -32,7 +32,7 @@ impl CodeCommand {
         }
 
         for (constraint, value) in spec.arg_constraints.iter().zip(args.iter()) {
-            constraint.validate(value)?;
+            constraint.validate(value, &working_dir)?;
         }
 
         Ok(Self {
@@ -44,11 +44,11 @@ impl CodeCommand {
 
     /// Execute — always via execv, never through a shell.
     #[cfg(feature = "docker")]
-    pub fn execute(&self) -> Result<std::process::Output, std::io::Error> {
+    pub async fn execute(&self) -> Result<std::process::Output, std::io::Error> {
         let path =
             env::var("PATH").unwrap_or_else(|_| String::from("/usr/local/bin:/usr/bin:/bin"));
         let home = env::home_dir().unwrap_or_else(|| PathBuf::from("/app"));
-        let mut command = std::process::Command::new(&self.bin);
+        let mut command = tokio::process::Command::new(&self.bin);
         command
             .args(&self.args)
             .current_dir(&self.working_dir)
@@ -59,7 +59,7 @@ impl CodeCommand {
         if let Ok(target) = env::var("CARGO_TARGET_DIR") {
             command.env("CARGO_TARGET_DIR", target);
         }
-        command.output()
+        command.output().await
     }
 }
 
@@ -67,22 +67,30 @@ impl CodeCommand {
 mod tests {
     use super::*;
     use crate::registry::REGISTRY;
+    use std::env;
     #[test]
     fn test_python_code_command_no_error() {
-        let args_as_vec: Vec<&str> = vec!["/tmp/hello.py"];
-        let _result =
-            CodeCommand::new(&REGISTRY.python, &args_as_vec, PathBuf::from("/tmp")).unwrap();
+        let curr_wd = env::current_dir().unwrap();
+        let args_as_vec: Vec<String> = vec!["integration-tests/helloworld.py".to_string()];
+        let _result = CodeCommand::new(&REGISTRY.python, &args_as_vec, curr_wd).unwrap();
     }
     #[test]
     fn test_node_command_no_error() {
-        let args_as_vec: Vec<&str> = vec!["/tmp/index.ts"];
-        let _result =
-            CodeCommand::new(&REGISTRY.node, &args_as_vec, PathBuf::from("/tmp")).unwrap();
+        let curr_wd = env::current_dir().unwrap();
+        let args_as_vec: Vec<String> = vec!["integration-tests/helloworld.js".to_string()];
+        let _result = CodeCommand::new(&REGISTRY.node, &args_as_vec, curr_wd).unwrap();
     }
     #[test]
     fn test_code_command_error() {
-        let args_as_vec: Vec<&str> = vec!["-m", "venv"];
+        let args_as_vec: Vec<String> = vec!["-m".to_string(), "venv".to_string()];
         let result = CodeCommand::new(&REGISTRY.python, &args_as_vec, PathBuf::from("/tmp"));
+        assert!(result.is_err());
+    }
+    #[test]
+    fn test_code_command_error_with_workspace() {
+        let curr_wd = env::current_dir().unwrap().join("integration-tests");
+        let args_as_vec: Vec<String> = vec!["../README.md".to_string()];
+        let result = CodeCommand::new(&REGISTRY.python, &args_as_vec, curr_wd);
         assert!(result.is_err());
     }
 }

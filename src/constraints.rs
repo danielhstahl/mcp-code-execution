@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use regex::Regex;
 //use std::path::Path;
 use thiserror::Error;
@@ -10,8 +12,8 @@ pub enum CLIError {
     //ForbiddenSubcommand(String, String),
     #[error("argument '{0}' failed validation: {1}")]
     InvalidArgument(String, String),
-    //#[error("path '{0}' escapes the workspace")]
-    //PathEscape(String),
+    #[error("path '{0}' escapes the workspace")]
+    PathEscape(String),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -24,13 +26,13 @@ pub enum ArgConstraint {
     /// Must match this regex (compiled once at startup).
     Pattern(Regex),
     /// Must be a valid path confined within the workspace root.
-    //WorkspacePath,
+    WorkspacePath(Box<ArgConstraint>),
     /// Optional; if absent the slot is simply skipped.
     Optional(Box<ArgConstraint>),
 }
 
 impl ArgConstraint {
-    pub fn validate(&self, value: &str /* , workspace: &Path*/) -> Result<(), CLIError> {
+    pub fn validate(&self, value: &str, workspace: &Path) -> Result<(), CLIError> {
         match self {
             ArgConstraint::Enum(variants) => {
                 if variants.contains(&value) {
@@ -52,21 +54,25 @@ impl ArgConstraint {
                     ))
                 }
             }
-            /*ArgConstraint::WorkspacePath => {
+            ArgConstraint::WorkspacePath(inner) => {
                 let candidate = workspace.join(value);
                 let canonical = candidate
                     .canonicalize()
-                    .map_err(|_| CLIError::PathEscape(value.to_string()))?;
-                if canonical.starts_with(workspace) {
-                    Ok(())
+                    .map_err(|e| CLIError::PathEscape(e.to_string()))?;
+                let canonical_workspace = workspace
+                    .canonicalize()
+                    .map_err(|e| CLIError::PathEscape(e.to_string()))?;
+                if canonical.starts_with(canonical_workspace) {
+                    inner.validate(value, workspace)
+                    //Ok(())
                 } else {
                     Err(CLIError::PathEscape(value.to_string()))
                 }
-            }*/
+            }
             ArgConstraint::Optional(inner) => {
                 // Caller decides whether to pass this slot at all;
                 // if they do, the inner constraint still applies.
-                inner.validate(value /* , workspace*/)
+                inner.validate(value, workspace)
             }
         }
     }

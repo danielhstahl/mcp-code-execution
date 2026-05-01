@@ -18,6 +18,7 @@ tokio = { version = "1", features = [
     "rt-multi-thread",
     "io-std",
     "signal",
+    "process"
 ] }
 tokio-util = { version = "0.7" }
 axum = { version = "0.8", features = ["macros"] }

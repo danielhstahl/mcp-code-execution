@@ -1,13 +1,8 @@
 use crate::constraints::CLIError;
 use serde::Serialize;
 use std::io;
-use std::process::{Command, Output};
+use std::process::Output;
 pub const LANGUAGE: &[&str] = &["rust", "javascript", "python"];
-
-/*pub trait CompileService: Send + Sync + 'static {
-    fn compile_project(&self, path: &Path, main_file: &Option<PathBuf>)
-    -> io::Result<DockerOutput>; //for running this mcp server locally
-}*/
 
 #[derive(Serialize)]
 pub struct DockerOutput {
@@ -27,7 +22,6 @@ impl DockerOutput {
 }
 
 pub fn handle_command_output(output: Output) -> Result<DockerOutput, CLIError> {
-    //let output = output?; //command.output()?;
     let stdout = String::from_utf8(output.stdout).map_err(|_e| {
         io::Error::new(
             io::ErrorKind::InvalidData,
