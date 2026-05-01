@@ -18,6 +18,7 @@ use std::path::PathBuf;
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 #[schemars(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum PythonCommand {
     Python,
     Uv,
@@ -26,6 +27,7 @@ pub enum PythonCommand {
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 #[schemars(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum NodeCommand {
     Npm,
     Yarn,
@@ -34,6 +36,7 @@ pub enum NodeCommand {
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 #[schemars(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum RustCommand {
     Cargo,
 }
