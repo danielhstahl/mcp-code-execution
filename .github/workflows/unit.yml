@@ -25,3 +25,7 @@ jobs:
       - name: test
         # single thread so that file related tests don't interact with each other
         run: cargo test  -- --test-threads=1
+
+      - name: test docker
+        # single thread so that file related tests don't interact with each other
+        run: cargo test  --features docker -- --test-threads=1
