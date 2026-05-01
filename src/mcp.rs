@@ -112,7 +112,9 @@ impl CodeCompiler {
             args,
         }): Parameters<PythonInput>,
     ) -> Result<CallToolResult, McpError> {
-        let result = compile_python_project(project_dir, &command, &args);
+        let mut path = self.path.clone();
+        path.push(project_dir);
+        let result = compile_python_project(path, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
@@ -127,7 +129,9 @@ impl CodeCompiler {
             args,
         }): Parameters<JavascriptInput>,
     ) -> Result<CallToolResult, McpError> {
-        let result = compile_javascript_project(project_dir, &command, &args);
+        let mut path = self.path.clone();
+        path.push(project_dir);
+        let result = compile_javascript_project(path, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
@@ -141,7 +145,9 @@ impl CodeCompiler {
             args,
         }): Parameters<RustInput>,
     ) -> Result<CallToolResult, McpError> {
-        let result = compile_rust_project(project_dir, &command, &args);
+        let mut path = self.path.clone();
+        path.push(project_dir);
+        let result = compile_rust_project(path, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))

@@ -47,7 +47,7 @@ impl CodeCommand {
     pub fn execute(&self) -> Result<std::process::Output, std::io::Error> {
         let path =
             env::var("PATH").unwrap_or_else(|_| String::from("/usr/local/bin:/usr/bin:/bin"));
-        let home = env::home_dir().unwrap_or_else(|| PathBuf::from("/home"));
+        let home = env::home_dir().unwrap_or_else(|| PathBuf::from("/app"));
         std::process::Command::new(&self.bin)
             .args(&self.args)
             .current_dir(&self.working_dir)
