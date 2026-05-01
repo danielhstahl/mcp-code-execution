@@ -3,8 +3,10 @@ use crate::compilation_service::DockerOutput;
 use crate::constraints::CLIError;
 use crate::mcp::PythonCommand;
 use crate::registry::REGISTRY;
+#[cfg(not(feature = "docker"))]
 use std::io;
 use std::path::PathBuf;
+#[cfg(not(feature = "docker"))]
 use std::process::Command;
 
 //confusingly named because if not feature docker, then spawns docker
@@ -48,10 +50,10 @@ pub fn compile_python_project(
     command: &PythonCommand,
     args: &str,
 ) -> Result<DockerOutput, CLIError> {
-    let docker_args = build_docker_args(work_dir, command, args)?; //, dependency_type);
+    let docker_args = build_docker_args(work_dir, command, args)?;
     let mut command = Command::new("docker");
     command.args(docker_args);
-    crate::compilation_service::run_docker_command(command)
+    crate::compilation_service::handle_command_output(command.output()?)
 }
 
 #[cfg(feature = "docker")]
@@ -66,9 +68,9 @@ pub fn compile_python_project(
         PythonCommand::Pytest => &REGISTRY.pytest,
     };
     let args_as_vec: Vec<&str> = args.split(" ").collect();
-    let result = CodeCommand::new(registry, &args_as_vec, working_dir)?;
+    let result = CodeCommand::new(registry, &args_as_vec, work_dir)?;
     let output = result.execute()?;
-    crate::compilation_service::run_docker_command(output)
+    crate::compilation_service::handle_command_output(output)
 }
 
 #[cfg(all(test, not(feature = "docker")))]

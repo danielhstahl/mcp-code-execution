@@ -3,8 +3,10 @@ use crate::compilation_service::DockerOutput;
 use crate::constraints::CLIError;
 use crate::mcp::NodeCommand;
 use crate::registry::REGISTRY;
+#[cfg(not(feature = "docker"))]
 use std::io;
 use std::path::PathBuf;
+#[cfg(not(feature = "docker"))]
 use std::process::Command;
 
 //confusingly named because if not feature docker, then spawns docker
@@ -45,29 +47,29 @@ fn build_docker_args(
 pub fn compile_javascript_project(
     work_dir: PathBuf,
     command: &NodeCommand,
-    args: &str, //dependency_type: &Option<DependencyType>,
+    args: &str,
 ) -> Result<DockerOutput, CLIError> {
-    let docker_args = build_docker_args(work_dir, command, args)?; //, dependency_type);
+    let docker_args = build_docker_args(work_dir, command, args)?;
     let mut command = Command::new("docker");
     command.args(docker_args);
-    crate::compilation_service::run_docker_command(command)
+    crate::compilation_service::handle_command_output(command.output()?)
 }
 
 #[cfg(feature = "docker")]
 pub fn compile_javascript_project(
-    work_dir: &Path,
-    command: &PythonCommand,
+    work_dir: PathBuf,
+    command: &NodeCommand,
     args: &str,
-) -> io::Result<DockerOutput> {
+) -> Result<DockerOutput, CLIError> {
     let registry = match command {
         NodeCommand::Npm => &REGISTRY.npm,
         NodeCommand::Yarn => &REGISTRY.yarn,
         NodeCommand::Node => &REGISTRY.node,
     };
     let args_as_vec: Vec<&str> = args.split(" ").collect();
-    let result = CodeCommand::new(registry, &args_as_vec, working_dir)?;
+    let result = CodeCommand::new(registry, &args_as_vec, work_dir)?;
     let output = result.execute()?;
-    crate::compilation_service::run_docker_command(output)
+    crate::compilation_service::handle_command_output(output)
 }
 
 #[cfg(all(test, not(feature = "docker")))]
