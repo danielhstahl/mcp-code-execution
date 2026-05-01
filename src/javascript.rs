@@ -76,8 +76,12 @@ mod tests {
 
     #[test]
     fn test_build_docker_args_npm() {
-        let args =
-            build_docker_args(PathBuf::from("/tmp"), &NodeCommand::Npm, "install axios").unwrap();
+        let args = build_docker_args(
+            PathBuf::from("/tmp"),
+            &NodeCommand::Npm,
+            &vec!["install".to_string(), "axios".to_string()],
+        )
+        .unwrap();
         assert_eq!(args[3], "/tmp:/usr/src/app");
         assert_eq!(args[9], "axios");
         assert_eq!(args.len(), 10);
@@ -85,8 +89,12 @@ mod tests {
 
     #[test]
     fn test_build_docker_args_yarn() {
-        let args =
-            build_docker_args(PathBuf::from("/tmp"), &NodeCommand::Yarn, "install axios").unwrap();
+        let args = build_docker_args(
+            PathBuf::from("/tmp"),
+            &NodeCommand::Yarn,
+            &vec!["install".to_string(), "axios".to_string()],
+        )
+        .unwrap();
         println!("{:?}", args);
         assert_eq!(args[3], "/tmp:/usr/src/app");
         assert_eq!(args[9], "axios");
@@ -95,8 +103,12 @@ mod tests {
 
     #[test]
     fn test_build_docker_args_node() {
-        let args =
-            build_docker_args(PathBuf::from("/tmp"), &NodeCommand::Node, "./index.ts").unwrap();
+        let args = build_docker_args(
+            PathBuf::from("/tmp"),
+            &NodeCommand::Node,
+            &vec!["./index.ts".to_string()],
+        )
+        .unwrap();
         assert_eq!(args[3], "/tmp:/usr/src/app");
         assert_eq!(args[8], "./index.ts");
         assert_eq!(args.len(), 9);

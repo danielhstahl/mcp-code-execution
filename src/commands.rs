@@ -67,6 +67,7 @@ impl CodeCommand {
 mod tests {
     use super::*;
     use crate::registry::REGISTRY;
+    use std::env;
     #[test]
     fn test_python_code_command_no_error() {
         let curr_wd = env::current_dir().unwrap();

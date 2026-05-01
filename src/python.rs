@@ -77,8 +77,12 @@ mod tests {
 
     #[test]
     fn test_build_docker_args_python() {
-        let args =
-            build_docker_args(PathBuf::from("/tmp"), &PythonCommand::Python, "main.py").unwrap();
+        let args = build_docker_args(
+            PathBuf::from("/tmp"),
+            &PythonCommand::Python,
+            &vec!["main.py".to_string()],
+        )
+        .unwrap();
         assert_eq!(args[3], "/tmp:/usr/src/app");
         assert_eq!(args[8], "main.py");
         assert_eq!(args.len(), 9);
@@ -86,8 +90,12 @@ mod tests {
 
     #[test]
     fn test_build_docker_args_uv() {
-        let args =
-            build_docker_args(PathBuf::from("/tmp"), &PythonCommand::Uv, "add numpy").unwrap();
+        let args = build_docker_args(
+            PathBuf::from("/tmp"),
+            &PythonCommand::Uv,
+            &vec!["add".to_string(), "numpy".to_string()],
+        )
+        .unwrap();
         assert_eq!(args[3], "/tmp:/usr/src/app");
         assert_eq!(args[9], "numpy");
         assert_eq!(args.len(), 10);
@@ -95,8 +103,12 @@ mod tests {
 
     #[test]
     fn test_build_docker_args_pytest() {
-        let args =
-            build_docker_args(PathBuf::from("/tmp"), &PythonCommand::Pytest, "main.py").unwrap();
+        let args = build_docker_args(
+            PathBuf::from("/tmp"),
+            &PythonCommand::Pytest,
+            &vec!["main.py".to_string()],
+        )
+        .unwrap();
         assert_eq!(args[3], "/tmp:/usr/src/app");
         assert_eq!(args[8], "main.py");
         assert_eq!(args.len(), 9);

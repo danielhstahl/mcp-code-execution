@@ -72,7 +72,12 @@ mod tests {
     use super::*;
     #[test]
     fn test_build_docker_args_run() {
-        let args = build_docker_args(PathBuf::from("/tmp"), &RustCommand::Cargo, "build").unwrap();
+        let args = build_docker_args(
+            PathBuf::from("/tmp"),
+            &RustCommand::Cargo,
+            &vec!["build".to_string()],
+        )
+        .unwrap();
         assert_eq!(args[3], "/tmp:/usr/src/app");
         assert_eq!(args[8], "build");
         assert_eq!(args.len(), 9);
