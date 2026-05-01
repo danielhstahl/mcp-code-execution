@@ -23,11 +23,11 @@ Make sure to build the docker images before running the mcp:
 
 Test the images:
 
-`docker run -it -v $(pwd):/app -e TYPE=default -w /app python-no-root ./integration-tests/helloworld.py`
+`docker run -it -v $(pwd):/app -e TYPE=default -w /app python-no-root python ./integration-tests/helloworld.py`
 
 `docker run -it -v $(pwd):/app -w /app rust-no-root cargo run`
 
-`docker run -it -v $(pwd):/app -e TYPE=default -w /app js-no-root ./integration-tests/helloworld.js`
+`docker run -it -v $(pwd):/app -e TYPE=default -w /app js-no-root node ./integration-tests/helloworld.js`
 
 ### Run MCP
 
@@ -64,7 +64,8 @@ Running Python:
 npx @modelcontextprotocol/inspector \
 --cli http://127.0.0.1:8000/mcp \
 --method tools/call --tool-name run_python \
---tool-arg entry_file=helloworld.py \
+--tool-arg command=python \
+--tool-arg args=helloworld.py \
 --tool-arg project_dir=integration-tests
 ```
 
@@ -74,7 +75,8 @@ Running Javascript:
 npx @modelcontextprotocol/inspector \
 --cli http://127.0.0.1:8000/mcp \
 --method tools/call --tool-name run_javascript \
---tool-arg entry_file=helloworld.js \
+--tool-arg command=node \
+--tool-arg args=helloworld.js \
 --tool-arg project_dir=integration-tests
 ```
 
@@ -84,7 +86,8 @@ Running Rust:
 npx @modelcontextprotocol/inspector \
 --cli http://127.0.0.1:8000/mcp \
 --method tools/call --tool-name run_rust \
---tool-arg execution_type=test \
+--tool-arg command=cargo \
+--tool-arg args=test \
 --tool-arg project_dir=.
 ```
 
