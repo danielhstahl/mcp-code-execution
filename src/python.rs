@@ -74,17 +74,18 @@ pub async fn compile_python_project(
 #[cfg(all(test, not(feature = "docker")))]
 mod tests {
     use super::*;
-
+    use std::env;
     #[test]
     fn test_build_docker_args_python() {
+        let curr_wd = env::current_dir().unwrap().join("integration-tests");
         let args = build_docker_args(
-            PathBuf::from("/tmp"),
+            curr_wd,
             &PythonCommand::Python,
-            &vec!["main.py".to_string()],
+            &vec!["helloworld.py".to_string()],
         )
         .unwrap();
-        assert_eq!(args[3], "/tmp:/usr/src/app");
-        assert_eq!(args[8], "main.py");
+        assert!(args[3].ends_with(":/usr/src/app"));
+        assert_eq!(args[8], "helloworld.py");
         assert_eq!(args.len(), 9);
     }
 

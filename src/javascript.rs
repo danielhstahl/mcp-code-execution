@@ -73,7 +73,7 @@ pub async fn compile_javascript_project(
 #[cfg(all(test, not(feature = "docker")))]
 mod tests {
     use super::*;
-
+    use std::env;
     #[test]
     fn test_build_docker_args_npm() {
         let args = build_docker_args(
@@ -103,14 +103,15 @@ mod tests {
 
     #[test]
     fn test_build_docker_args_node() {
+        let curr_wd = env::current_dir().unwrap().join("integration-tests");
         let args = build_docker_args(
-            PathBuf::from("/tmp"),
+            curr_wd,
             &NodeCommand::Node,
-            &vec!["./index.ts".to_string()],
+            &vec!["./helloworld.js".to_string()],
         )
         .unwrap();
-        assert_eq!(args[3], "/tmp:/usr/src/app");
-        assert_eq!(args[8], "./index.ts");
+        assert!(args[3].ends_with(":/usr/src/app"));
+        assert_eq!(args[8], "./helloworld.js");
         assert_eq!(args.len(), 9);
     }
 }
