@@ -48,13 +48,18 @@ impl CodeCommand {
         let path =
             env::var("PATH").unwrap_or_else(|_| String::from("/usr/local/bin:/usr/bin:/bin"));
         let home = env::home_dir().unwrap_or_else(|| PathBuf::from("/app"));
-        std::process::Command::new(&self.bin)
+        let mut command = std::process::Command::new(&self.bin);
+        command
             .args(&self.args)
             .current_dir(&self.working_dir)
             .env_clear() // no inherited env leakage
             .env("PATH", path)
-            .env("HOME", home)
-            .output()
+            .env("HOME", home);
+        //conditionally get this to pass the permission issues in integration testing
+        if let Ok(target) = env::var("CARGO_TARGET_DIR") {
+            command.env("CARGO_TARGET_DIR", target);
+        }
+        command.output()
     }
 }
 
