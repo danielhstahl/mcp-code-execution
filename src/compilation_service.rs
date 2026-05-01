@@ -1,13 +1,13 @@
+use crate::constraints::CLIError;
 use serde::Serialize;
 use std::io;
-use std::path::{Path, PathBuf};
 use std::process::Command;
 pub const LANGUAGE: &[&str] = &["rust", "javascript", "python"];
 
-pub trait CompileService: Send + Sync + 'static {
+/*pub trait CompileService: Send + Sync + 'static {
     fn compile_project(&self, path: &Path, main_file: &Option<PathBuf>)
     -> io::Result<DockerOutput>; //for running this mcp server locally
-}
+}*/
 
 #[derive(Serialize)]
 pub struct DockerOutput {
@@ -26,7 +26,7 @@ impl DockerOutput {
     }
 }
 
-pub fn run_docker_command(mut command: Command) -> io::Result<DockerOutput> {
+pub fn run_docker_command(mut command: Command) -> Result<DockerOutput, CLIError> {
     let output = command.output()?;
     let stdout = String::from_utf8(output.stdout).map_err(|_e| {
         io::Error::new(

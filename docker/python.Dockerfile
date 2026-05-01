@@ -5,8 +5,9 @@ WORKDIR /app
 USER appuser
 
 RUN wget -qO- https://astral.sh/uv/install.sh | sh
-COPY --chown=appuser:appgroup entrypoint-python.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-ENV TYPE=default
-ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
-CMD ["main.py"]
+RUN python3 -m pip install pytest
+#COPY --chown=appuser:appgroup entrypoint-python.sh /usr/local/bin/entrypoint.sh
+#RUN chmod +x /usr/local/bin/entrypoint.sh
+#ENV TYPE=default
+#ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
+#CMD ["main.py"]

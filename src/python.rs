@@ -1,130 +1,74 @@
-use crate::compilation_service::{CompileService, DockerOutput};
-use rmcp::schemars;
-use serde::Deserialize;
-use std::fmt;
+use crate::commands::CodeCommand;
+use crate::compilation_service::DockerOutput;
+use crate::constraints::CLIError;
+use crate::mcp::PythonCommand;
+use crate::registry::REGISTRY;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
-
-#[derive(Debug, Clone)]
-pub struct PythonService {
-    dependency_type: Option<DependencyType>,
-}
-
-impl PythonService {
-    pub fn new(dependency_type: Option<DependencyType>) -> Self {
-        Self { dependency_type }
-    }
-}
-
-#[derive(Deserialize, Debug, Clone, schemars::JsonSchema)]
-pub enum DependencyType {
-    RequirementsTxt,
-    Uv,
-    Default,
-}
-
-impl fmt::Display for DependencyType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            DependencyType::RequirementsTxt => write!(f, "requirements.txt"),
-            DependencyType::Uv => write!(f, "uv"),
-            DependencyType::Default => write!(f, "default"),
-        }
-    }
-}
 
 //confusingly named because if not feature docker, then spawns docker
 #[cfg(not(feature = "docker"))]
 fn build_docker_args(
-    work_dir_str: &str,
-    file_name_str: &str,
-    dependency_type: &Option<DependencyType>,
-) -> Vec<String> {
-    vec![
+    working_dir: PathBuf,
+    command: &PythonCommand,
+    args: &str,
+) -> Result<Vec<String>, CLIError> {
+    let registry = match command {
+        PythonCommand::Python => &REGISTRY.python,
+        PythonCommand::Uv => &REGISTRY.uv,
+        PythonCommand::Pytest => &REGISTRY.pytest,
+    };
+    let working_dir_cln = working_dir.clone();
+    let work_dir_str = working_dir_cln.to_str().ok_or_else(|| {
+        CLIError::Io(io::Error::other(
+            "Supplied working directory is not an actual path",
+        ))
+    })?;
+    let args_as_vec: Vec<&str> = args.split(" ").collect();
+    let result = CodeCommand::new(registry, &args_as_vec, working_dir)?;
+    let mut docker_args = vec![
         "run".to_string(),
         "--rm".to_string(),
         "-v".to_string(),
         format!("{}:/usr/src/app", work_dir_str),
-        "-e".to_string(),
-        format!(
-            "TYPE={}",
-            dependency_type.as_ref().unwrap_or(&DependencyType::Default)
-        ),
         "-w".to_string(),
         "/usr/src/app".to_string(),
         "python-no-root".to_string(),
-        file_name_str.to_string(),
-    ]
+        result.bin.to_string(),
+    ];
+    docker_args.extend_from_slice(&result.args);
+    Ok(docker_args)
 }
 
 //docker run -it --rm --name my-python-script -v "$PWD":/usr/src/app -w /usr/src/app python:3 python your_script.py
 #[cfg(not(feature = "docker"))]
-fn compile_python_project(
-    work_dir: &Path,
-    file_name: &Path,
-    dependency_type: &Option<DependencyType>,
-) -> io::Result<DockerOutput> {
-    let work_dir_str = work_dir
-        .to_str()
-        .ok_or_else(|| io::Error::other("Supplied working directory is not an actual path"))?;
-    let file_name_str = file_name
-        .to_str()
-        .ok_or_else(|| io::Error::other("Supplied file name is not an actual path"))?;
-    //assumes that external to this we already have run `docker build -t python-no-root -f docker/python.Dockerfile ./docker`
-    let args = build_docker_args(work_dir_str, file_name_str, dependency_type);
+pub fn compile_python_project(
+    work_dir: PathBuf,
+    command: &PythonCommand,
+    args: &str,
+) -> Result<DockerOutput, CLIError> {
+    let docker_args = build_docker_args(work_dir, command, args)?; //, dependency_type);
     let mut command = Command::new("docker");
-    command.args(args);
-
+    command.args(docker_args);
     crate::compilation_service::run_docker_command(command)
 }
 
 #[cfg(feature = "docker")]
-fn compile_python_project(
-    work_dir: &Path,
-    file_name: &Path,
-    dependency_type: &Option<DependencyType>,
-) -> io::Result<DockerOutput> {
-    let file_name_str = file_name
-        .to_str()
-        .ok_or_else(|| io::Error::other("Supplied file name is not an actual path"))?;
-
-    let (binary, args) = match dependency_type.as_ref().unwrap_or(&DependencyType::Default) {
-        DependencyType::Default => {
-            Ok::<(&str, Vec<&str>), io::Error>(("python", vec![file_name_str]))
-        }
-        DependencyType::RequirementsTxt => {
-            let mut command = Command::new("python");
-            command.current_dir(work_dir);
-            command.args(vec!["-m", "pip", "install", "-r", "requirements.txt"]);
-            command.output()?;
-            Ok(("python", vec![file_name_str]))
-        }
-        DependencyType::Uv => {
-            let mut command = Command::new("uv");
-            command.current_dir(work_dir);
-            command.args(vec!["sync"]);
-            command.output()?;
-            Ok(("uv", vec!["run", "python", file_name_str]))
-        }
-    }?;
-    let mut command = Command::new(binary);
-    command.current_dir(work_dir);
-    command.args(args);
-    crate::compilation_service::run_docker_command(command)
-}
-
-impl CompileService for PythonService {
-    fn compile_project(
-        &self,
-        path: &Path,
-        main_file: &Option<PathBuf>,
-    ) -> io::Result<DockerOutput> {
-        let main_file = main_file.as_ref().ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, "main_file needs to be defined")
-        })?;
-        compile_python_project(path, main_file, &self.dependency_type)
-    }
+pub fn compile_python_project(
+    work_dir: PathBuf,
+    command: &PythonCommand,
+    args: &str,
+) -> Result<DockerOutput, CLIError> {
+    let registry = match command {
+        PythonCommand::Python => &REGISTRY.python,
+        PythonCommand::Uv => &REGISTRY.uv,
+        PythonCommand::Pytest => &REGISTRY.pytest,
+    };
+    let args_as_vec: Vec<&str> = args.split(" ").collect();
+    let result = CodeCommand::new(registry, &args_as_vec, working_dir)?;
+    let output = result.execute()?;
+    crate::compilation_service::run_docker_command(output)
 }
 
 #[cfg(all(test, not(feature = "docker")))]
@@ -132,33 +76,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_build_docker_args_requirements_txt() {
-        let args = build_docker_args(
-            "/mock/path",
-            "main.py",
-            &Some(DependencyType::RequirementsTxt),
-        );
-        assert_eq!(args[3], "/mock/path:/usr/src/app");
-        assert_eq!(args[5], "TYPE=requirements.txt");
-        assert_eq!(args[9], "main.py");
-        assert_eq!(args.len(), 10);
+    fn test_build_docker_args_python() {
+        let args =
+            build_docker_args(PathBuf::from("/tmp"), &PythonCommand::Python, "main.py").unwrap();
+        assert_eq!(args[3], "/tmp:/usr/src/app");
+        assert_eq!(args[8], "main.py");
+        assert_eq!(args.len(), 9);
     }
 
     #[test]
     fn test_build_docker_args_uv() {
-        let args = build_docker_args("/mock/path", "main.py", &Some(DependencyType::Uv));
-        assert_eq!(args[3], "/mock/path:/usr/src/app");
-        assert_eq!(args[5], "TYPE=uv");
-        assert_eq!(args[9], "main.py");
+        let args =
+            build_docker_args(PathBuf::from("/tmp"), &PythonCommand::Uv, "add numpy").unwrap();
+        assert_eq!(args[3], "/tmp:/usr/src/app");
+        assert_eq!(args[9], "numpy");
         assert_eq!(args.len(), 10);
     }
 
     #[test]
-    fn test_build_docker_args_default() {
-        let args = build_docker_args("/mock/path", "main.py", &None);
-        assert_eq!(args[3], "/mock/path:/usr/src/app");
-        assert_eq!(args[5], "TYPE=default");
-        assert_eq!(args[9], "main.py");
-        assert_eq!(args.len(), 10);
+    fn test_build_docker_args_pytest() {
+        let args =
+            build_docker_args(PathBuf::from("/tmp"), &PythonCommand::Pytest, "main.py").unwrap();
+        assert_eq!(args[3], "/tmp:/usr/src/app");
+        assert_eq!(args[8], "main.py");
+        assert_eq!(args.len(), 9);
     }
 }

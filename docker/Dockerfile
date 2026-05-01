@@ -7,6 +7,7 @@ RUN cargo build --release --features docker
 ## main docker to actually run this stuff
 FROM nikolaik/python-nodejs:python3.14-nodejs25-slim
 RUN apt-get update && apt-get install -y curl gcc libc6-dev
+RUN python -m pip install pytest
 RUN addgroup --system appgroup && \
     adduser --system --ingroup appgroup appuser --home /app
 RUN mkdir -p /app/code_location && chown -R appuser:appgroup /app/code_location && chmod 700 /app/code_location

@@ -1,42 +1,31 @@
-use crate::compilation_service::{CompileService, DockerOutput};
-use rmcp::schemars;
-use serde::Deserialize;
-use std::fmt;
+use crate::commands::CodeCommand;
+use crate::compilation_service::DockerOutput;
+use crate::constraints::CLIError;
+use crate::mcp::RustCommand;
+use crate::registry::REGISTRY;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
-
-#[derive(Debug, Clone)]
-pub struct RustService {
-    execution_type: ExecutionType,
-}
-
-impl RustService {
-    pub fn new(execution_type: ExecutionType) -> Self {
-        Self { execution_type }
-    }
-}
-
-#[derive(Deserialize, Debug, Clone, schemars::JsonSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum ExecutionType {
-    Run,
-    Test,
-}
-
-impl fmt::Display for ExecutionType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ExecutionType::Run => write!(f, "run"),
-            ExecutionType::Test => write!(f, "test"),
-        }
-    }
-}
 
 //confusingly named because if not feature docker, then spawns docker
 #[cfg(not(feature = "docker"))]
-fn build_docker_args(work_dir_str: &str, execution_type: &ExecutionType) -> Vec<String> {
-    vec![
+fn build_docker_args(
+    working_dir: PathBuf,
+    command: &RustCommand,
+    args: &str,
+) -> Result<Vec<String>, CLIError> {
+    let registry = match command {
+        RustCommand::Cargo => &REGISTRY.cargo,
+    };
+    let working_dir_cln = working_dir.clone();
+    let work_dir_str = working_dir_cln.to_str().ok_or_else(|| {
+        CLIError::Io(io::Error::other(
+            "Supplied working directory is not an actual path",
+        ))
+    })?;
+    let args_as_vec: Vec<&str> = args.split(" ").collect();
+    let result = CodeCommand::new(registry, &args_as_vec, working_dir)?;
+    let mut docker_args = vec![
         "run".to_string(),
         "--rm".to_string(),
         "-v".to_string(),
@@ -44,47 +33,38 @@ fn build_docker_args(work_dir_str: &str, execution_type: &ExecutionType) -> Vec<
         "-w".to_string(),
         "/usr/src/app".to_string(),
         "rust-no-root".to_string(),
-        "cargo".to_string(),
-        execution_type.to_string(),
-    ]
+        result.bin.to_string(),
+    ];
+    docker_args.extend_from_slice(&result.args);
+    Ok(docker_args)
 }
 
 #[cfg(not(feature = "docker"))]
-fn compile_rust_project(
-    work_dir: &Path,
-    execution_type: &ExecutionType,
-) -> io::Result<DockerOutput> {
-    let work_dir_str = work_dir
-        .to_str()
-        .ok_or_else(|| io::Error::other("Supplied working directory is not an actual path"))?;
-
+pub fn compile_rust_project(
+    work_dir: PathBuf,
+    command: &RustCommand,
+    args: &str, //dependency_type: &Option<DependencyType>,
+) -> Result<DockerOutput, CLIError> {
     //assumes that external to this we already have run `docker build -t rust-no-root -f docker/rust.Dockerfile ./docker`
-    let args = build_docker_args(work_dir_str, execution_type);
+    let docker_args = build_docker_args(work_dir, command, args)?; //, dependency_type);
     let mut command = Command::new("docker");
-    command.args(args);
-
+    command.args(docker_args);
     crate::compilation_service::run_docker_command(command)
 }
 
 #[cfg(feature = "docker")]
-fn compile_rust_project(
-    work_dir: &Path,
-    execution_type: &ExecutionType,
+pub fn compile_rust_project(
+    work_dir: PathBuf,
+    command: &RustCommand,
+    args: &str,
 ) -> io::Result<DockerOutput> {
-    let mut command = Command::new("cargo");
-    command.current_dir(work_dir);
-    command.args(vec![execution_type.to_string()]);
-    crate::compilation_service::run_docker_command(command)
-}
-
-impl CompileService for RustService {
-    fn compile_project(
-        &self,
-        path: &Path,
-        _main_file: &Option<PathBuf>,
-    ) -> io::Result<DockerOutput> {
-        compile_rust_project(path, &self.execution_type)
-    }
+    let registry = match command {
+        RustCommand::Cargo => &REGISTRY.cargo,
+    };
+    let args_as_vec: Vec<&str> = args.split(" ").collect();
+    let result = CodeCommand::new(registry, &args_as_vec, working_dir)?;
+    let output = result.execute()?;
+    crate::compilation_service::run_docker_command(output)
 }
 
 #[cfg(all(test, not(feature = "docker")))]
@@ -92,17 +72,9 @@ mod tests {
     use super::*;
     #[test]
     fn test_build_docker_args_run() {
-        let args = build_docker_args("/mock/path", &ExecutionType::Run);
-        assert_eq!(args[3], "/mock/path:/usr/src/app");
-        assert_eq!(args[8], "run");
-        assert_eq!(args.len(), 9);
-    }
-
-    #[test]
-    fn test_build_docker_args_test() {
-        let args = build_docker_args("/mock/path", &ExecutionType::Test);
-        assert_eq!(args[3], "/mock/path:/usr/src/app");
-        assert_eq!(args[8], "test");
+        let args = build_docker_args(PathBuf::from("/tmp"), &RustCommand::Cargo, "build").unwrap();
+        assert_eq!(args[3], "/tmp:/usr/src/app");
+        assert_eq!(args[8], "build");
         assert_eq!(args.len(), 9);
     }
 }
