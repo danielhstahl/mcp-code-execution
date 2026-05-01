@@ -1,10 +1,10 @@
-use crate::compilation_service::{CompileService, DockerOutput, LANGUAGE};
-use crate::javascript::{DependencyType as JsDependencyType, JSService};
-use crate::python::{DependencyType as PyDependencyType, PythonService};
-use crate::rust::{ExecutionType, RustService};
+use crate::compilation_service::{DockerOutput, LANGUAGE};
+use crate::javascript::compile_javascript_project;
+use crate::python::compile_python_project;
+use crate::rust::compile_rust_project;
 use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler,
-    handler::server::{router::tool::ToolRouter, wrapper::Parameters},
+    handler::server::{/*router::tool::ToolRouter,*/ wrapper::Parameters},
     model::{
         CallToolResult, Content, Implementation, InitializeRequestParams, InitializeResult,
         ProtocolVersion, ServerCapabilities, ServerInfo,
@@ -17,41 +17,64 @@ use serde::Deserialize;
 use std::path::PathBuf;
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
+#[schemars(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum PythonCommand {
+    Python,
+    Uv,
+    Pytest,
+}
+
+#[derive(Debug, schemars::JsonSchema, Deserialize)]
+#[schemars(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum NodeCommand {
+    Npm,
+    Yarn,
+    Node,
+}
+
+#[derive(Debug, schemars::JsonSchema, Deserialize)]
+#[schemars(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum RustCommand {
+    Cargo,
+}
+
+#[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct PythonInput {
-    #[schemars(
-        description = "If using uv or requirements.txt.  If no dependencies, don't specify"
-    )]
-    pub dependency_type: Option<PyDependencyType>,
     #[schemars(
         description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory."
     )]
     pub project_dir: PathBuf,
-    #[schemars(description = "File name within the project to execute.  Eg, `main.py`")]
-    pub entry_file: PathBuf,
+    #[schemars(description = "Command to run.")]
+    pub command: PythonCommand,
+    #[schemars(description = "CLI arguments to pass to the command")]
+    pub args: String,
 }
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct JavascriptInput {
-    #[schemars(description = "If using npm or yarn.  If no dependencies, don't specify")]
-    pub dependency_type: Option<JsDependencyType>,
     #[schemars(
         description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory."
     )]
     pub project_dir: PathBuf,
-    #[schemars(description = "File name within the project to execute.  Eg, `index.js`")]
-    pub entry_file: PathBuf,
+    #[schemars(description = "Command to run.")]
+    pub command: NodeCommand,
+    #[schemars(description = "CLI arguments to pass to the command")]
+    pub args: String,
 }
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct RustInput {
     #[schemars(
-        description = "If running tests or running the app.  Use \"run\" for executing code and \"test\" for testing code."
-    )]
-    pub execution_type: ExecutionType,
-    #[schemars(
         description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory."
     )]
     pub project_dir: PathBuf,
+    #[schemars(description = "Command to run.")]
+    pub command: RustCommand,
+    #[schemars(description = "CLI arguments to pass to the command")]
+    pub args: String,
 }
 
 fn convert_docker_output_to_tool_result(docker_output: DockerOutput) -> CallToolResult {
@@ -65,7 +88,7 @@ fn convert_docker_output_to_tool_result(docker_output: DockerOutput) -> CallTool
 }
 
 pub struct CodeCompiler {
-    tool_router: ToolRouter<Self>,
+    //tool_router: ToolRouter<Self>,
     #[cfg(feature = "docker")]
     path: PathBuf,
 }
@@ -75,7 +98,7 @@ pub struct CodeCompiler {
 impl CodeCompiler {
     pub fn new(project_location: &str) -> Self {
         Self {
-            tool_router: Self::tool_router(),
+            //tool_router: Self::tool_router(),
             path: PathBuf::from(project_location),
         }
     }
@@ -84,15 +107,14 @@ impl CodeCompiler {
     pub async fn run_python(
         &self,
         Parameters(PythonInput {
-            dependency_type,
             project_dir,
-            entry_file,
+            command,
+            args,
         }): Parameters<PythonInput>,
     ) -> Result<CallToolResult, McpError> {
-        let service = PythonService::new(dependency_type);
         let mut path = self.path.clone();
         path.push(project_dir);
-        let result = service.compile_project(&path, &Some(entry_file));
+        let result = compile_python_project(path, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
@@ -102,15 +124,14 @@ impl CodeCompiler {
     pub async fn run_javascript(
         &self,
         Parameters(JavascriptInput {
-            dependency_type,
             project_dir,
-            entry_file,
+            command,
+            args,
         }): Parameters<JavascriptInput>,
     ) -> Result<CallToolResult, McpError> {
-        let service = JSService::new(dependency_type);
         let mut path = self.path.clone();
         path.push(project_dir);
-        let result = service.compile_project(&path, &Some(entry_file));
+        let result = compile_javascript_project(path, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
@@ -120,13 +141,13 @@ impl CodeCompiler {
         &self,
         Parameters(RustInput {
             project_dir,
-            execution_type,
+            command,
+            args,
         }): Parameters<RustInput>,
     ) -> Result<CallToolResult, McpError> {
-        let service = RustService::new(execution_type);
         let mut path = self.path.clone();
         path.push(project_dir);
-        let result = service.compile_project(&path, &None);
+        let result = compile_rust_project(path, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
@@ -144,7 +165,7 @@ impl CodeCompiler {
 impl CodeCompiler {
     pub fn new() -> Self {
         Self {
-            tool_router: Self::tool_router(),
+            //tool_router: Self::tool_router(),
             #[cfg(feature = "docker")]
             path: PathBuf::from(project_location),
         }
@@ -154,13 +175,12 @@ impl CodeCompiler {
     pub async fn run_python(
         &self,
         Parameters(PythonInput {
-            dependency_type,
             project_dir,
-            entry_file,
+            command,
+            args,
         }): Parameters<PythonInput>,
     ) -> Result<CallToolResult, McpError> {
-        let service = PythonService::new(dependency_type);
-        let result = service.compile_project(&project_dir, &Some(entry_file));
+        let result = compile_python_project(project_dir, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
@@ -170,14 +190,12 @@ impl CodeCompiler {
     pub async fn run_javascript(
         &self,
         Parameters(JavascriptInput {
-            dependency_type,
-            #[cfg(not(feature = "docker"))]
             project_dir,
-            entry_file,
+            command,
+            args,
         }): Parameters<JavascriptInput>,
     ) -> Result<CallToolResult, McpError> {
-        let service = JSService::new(dependency_type);
-        let result = service.compile_project(&project_dir, &Some(entry_file));
+        let result = compile_javascript_project(project_dir, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
@@ -186,13 +204,12 @@ impl CodeCompiler {
     pub async fn run_rust(
         &self,
         Parameters(RustInput {
-            execution_type,
-            #[cfg(not(feature = "docker"))]
             project_dir,
+            command,
+            args,
         }): Parameters<RustInput>,
     ) -> Result<CallToolResult, McpError> {
-        let service = RustService::new(execution_type);
-        let result = service.compile_project(&project_dir, &None);
+        let result = compile_rust_project(project_dir, &command, &args);
         result
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))

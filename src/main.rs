@@ -1,7 +1,10 @@
+mod commands;
 mod compilation_service;
+mod constraints;
 mod javascript;
 mod mcp;
 mod python;
+mod registry;
 mod rust;
 
 use crate::mcp::CodeCompiler;
