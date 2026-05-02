@@ -4,7 +4,7 @@ use crate::python::compile_python_project;
 use crate::rust::compile_rust_project;
 use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler,
-    handler::server::{/*router::tool::ToolRouter,*/ wrapper::Parameters},
+    handler::server::wrapper::Parameters,
     model::{
         CallToolResult, Content, Implementation, InitializeRequestParams, InitializeResult,
         ProtocolVersion, ServerCapabilities, ServerInfo,
@@ -44,36 +44,42 @@ pub enum RustCommand {
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct PythonInput {
     #[schemars(
-        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory."
+        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory.  Example: 'my_project' or './src/my_project'."
     )]
     pub project_dir: PathBuf,
-    #[schemars(description = "Command to run.")]
+    #[schemars(description = "Command to run.  One of \"python\", \"uv\", \"pytest\"")]
     pub command: PythonCommand,
-    #[schemars(description = "CLI arguments to pass to the command")]
+    #[schemars(
+        description = "CLI arguments to pass to the command.  Examples: \"['main.py']\" or \"['install', 'numpy']\""
+    )]
     pub args: Vec<String>,
 }
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct JavascriptInput {
     #[schemars(
-        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory."
+        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory. Example: 'my_project' or './src/my_project'."
     )]
     pub project_dir: PathBuf,
-    #[schemars(description = "Command to run.")]
+    #[schemars(description = "Command to run. One of \"node\", \"npm\", \"yarn\"")]
     pub command: NodeCommand,
-    #[schemars(description = "CLI arguments to pass to the command")]
+    #[schemars(
+        description = "CLI arguments to pass to the command.  Examples: \"['index.ts']\" or \"['install', 'axios']\""
+    )]
     pub args: Vec<String>,
 }
 
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct RustInput {
     #[schemars(
-        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory."
+        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory.  Example: 'my_project' or './src/my_project'."
     )]
     pub project_dir: PathBuf,
-    #[schemars(description = "Command to run.")]
+    #[schemars(description = "Command to run.  \"cargo\" is the only valid command.")]
     pub command: RustCommand,
-    #[schemars(description = "CLI arguments to pass to the command")]
+    #[schemars(
+        description = "CLI arguments to pass to the command.  Examples: \"['test']\" or \"['build']"
+    )]
     pub args: Vec<String>,
 }
 
@@ -100,7 +106,6 @@ fn sanitize_path(canonical_base_path: &PathBuf, sub_folder: &PathBuf) -> Result<
         ));
     }
     let base_path = canonical_base_path.join(&sub_folder); //();
-    //base_path.push(sub_folder);
     // Canonicalize and verify the final path is a child of the allowed base path
     let canonical_full = base_path
         .canonicalize()
