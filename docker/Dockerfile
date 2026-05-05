@@ -11,7 +11,6 @@ RUN python -m pip install pytest
 RUN mkdir -p /app/code_location && chown -R pn:pn /app/code_location && chmod 770 /app/code_location
 WORKDIR /app
 USER pn
-ENV HOME=/app
 COPY --from=builder --chown=pn:pn /app/target/release/code-exec-mcp /app/code-exec-mcp
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/app/.cargo/bin:${PATH}"
