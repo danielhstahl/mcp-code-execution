@@ -21,6 +21,7 @@ use std::path::PathBuf;
 #[serde(rename_all = "lowercase")]
 pub enum PythonCommand {
     Python,
+    Pip,
     Uv,
     Pytest,
 }
@@ -47,7 +48,7 @@ pub struct PythonInput {
         description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory.  Example: 'my_project' or './src/my_project'."
     )]
     pub project_dir: PathBuf,
-    #[schemars(description = "Command to run.  One of \"python\", \"uv\", \"pytest\"")]
+    #[schemars(description = "Command to run.  One of \"python\", \"pip\", \"uv\", \"pytest\"")]
     pub command: PythonCommand,
     #[schemars(
         description = "CLI arguments to pass to the command.  Examples: \"['main.py']\" or \"['install', 'numpy']\""

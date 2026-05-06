@@ -59,6 +59,14 @@ impl CodeCommand {
         if let Ok(target) = env::var("CARGO_TARGET_DIR") {
             command.env("CARGO_TARGET_DIR", target);
         }
+        //Needed for proxy, if exists
+        if let Ok(target) = env::var("HTTP_PROXY") {
+            command.env("HTTP_PROXY", target);
+        }
+        //Needed for proxy, if exists
+        if let Ok(target) = env::var("HTTPS_PROXY") {
+            command.env("HTTPS_PROXY", target);
+        }
         command.output().await
     }
 }

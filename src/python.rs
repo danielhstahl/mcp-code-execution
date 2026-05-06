@@ -18,6 +18,7 @@ fn build_docker_args(
 ) -> Result<Vec<String>, CLIError> {
     let registry = match command {
         PythonCommand::Python => &REGISTRY.python,
+        PythonCommand::Pip => &REGISTRY.pip,
         PythonCommand::Uv => &REGISTRY.uv,
         PythonCommand::Pytest => &REGISTRY.pytest,
     };
@@ -63,6 +64,7 @@ pub async fn compile_python_project(
 ) -> Result<DockerOutput, CLIError> {
     let registry = match command {
         PythonCommand::Python => &REGISTRY.python,
+        PythonCommand::Pip => &REGISTRY.pip,
         PythonCommand::Uv => &REGISTRY.uv,
         PythonCommand::Pytest => &REGISTRY.pytest,
     };

@@ -7,6 +7,7 @@ pub struct CommandRegistry {
     pub yarn: AllowedCommand,
     pub node: AllowedCommand,
     pub python: AllowedCommand,
+    pub pip: AllowedCommand,
     pub uv: AllowedCommand,
     pub pytest: AllowedCommand,
     pub cargo: AllowedCommand,
@@ -44,6 +45,13 @@ pub static REGISTRY: LazyLock<CommandRegistry> = LazyLock::new(|| CommandRegistr
         arg_constraints: vec![ArgConstraint::WorkspacePath(Box::new(
             ArgConstraint::Pattern(FILE_NAME.clone()),
         ))],
+    },
+    pip: AllowedCommand {
+        bin: "pip",
+        arg_constraints: vec![
+            ArgConstraint::Enum(&["install"]),
+            ArgConstraint::Optional(Box::new(ArgConstraint::Pattern(SCRIPT_NAME.clone()))),
+        ],
     },
     uv: AllowedCommand {
         bin: "uv",
