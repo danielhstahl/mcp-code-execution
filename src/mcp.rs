@@ -129,7 +129,13 @@ impl CodeCompiler {
         }
     }
 
-    #[tool(description = "run Python code")]
+    #[tool(
+        description = "Execute Python code in an existing project directory. Use \
+                           command 'python', 'pytest', or 'uv' to run a script, 'pip' or 'uv' to install dependencies. \
+                           Requires the project files to already exist in project_dir — \
+                           write the files first, then call this tool to run or test them. \
+                           State does not persist between calls."
+    )]
     pub async fn run_python(
         &self,
         Parameters(PythonInput {
@@ -145,7 +151,13 @@ impl CodeCompiler {
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 
-    #[tool(description = "run Javascript code")]
+    #[tool(
+        description = "Execute Javascript code in an existing project directory. Use \
+                       command 'node' to run a script, 'yarn' or 'npm' to install dependencies. \
+                       Requires the project files to already exist in project_dir — \
+                       write the files first, then call this tool to run or test them. \
+                       State does not persist between calls."
+    )]
     pub async fn run_javascript(
         &self,
         Parameters(JavascriptInput {
@@ -160,7 +172,13 @@ impl CodeCompiler {
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
-    #[tool(description = "run Rust code")]
+    #[tool(
+        description = "Execute Rust code in an existing project directory. Use \
+                   command 'cargo'. \
+                   Requires the project files to already exist in project_dir — \
+                   write the files first, then call this tool to run or test them. \
+                   State does not persist between calls."
+    )]
     pub async fn run_rust(
         &self,
         Parameters(RustInput {
@@ -193,7 +211,13 @@ impl CodeCompiler {
         }
     }
 
-    #[tool(description = "run Python code")]
+    #[tool(
+        description = "Execute Python code in an existing project directory. Use \
+                       command 'python', 'pytest', or 'uv' to run a script, 'pip' or 'uv' to install dependencies. \
+                       Requires the project files to already exist in project_dir — \
+                       write the files first, then call this tool to run or test them. \
+                       State does not persist between calls."
+    )]
     pub async fn run_python(
         &self,
         Parameters(PythonInput {
@@ -208,7 +232,13 @@ impl CodeCompiler {
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 
-    #[tool(description = "run Javascript code")]
+    #[tool(
+        description = "Execute Javascript code in an existing project directory. Use \
+                   command 'node' to run a script, 'yarn' or 'npm' to install dependencies. \
+                   Requires the project files to already exist in project_dir — \
+                   write the files first, then call this tool to run or test them. \
+                   State does not persist between calls."
+    )]
     pub async fn run_javascript(
         &self,
         Parameters(JavascriptInput {
@@ -222,7 +252,13 @@ impl CodeCompiler {
             .map(convert_docker_output_to_tool_result)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
-    #[tool(description = "run Rust code")]
+    #[tool(
+        description = "Execute Rust code in an existing project directory. Use \
+               command 'cargo'. \
+               Requires the project files to already exist in project_dir — \
+               write the files first, then call this tool to run or test them. \
+               State does not persist between calls."
+    )]
     pub async fn run_rust(
         &self,
         Parameters(RustInput {
@@ -237,7 +273,7 @@ impl CodeCompiler {
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 
-    #[tool(description = "get supported languages")]
+    #[tool(description = "Get languages supported by this MCP server")]
     pub async fn get_supported_languages(&self) -> Result<CallToolResult, McpError> {
         let json_result = serde_json::to_string(&LANGUAGE).unwrap();
         Ok(CallToolResult::success(vec![Content::text(json_result)]))
