@@ -45,7 +45,7 @@ pub enum RustCommand {
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct PythonInput {
     #[schemars(
-        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory.  Example: 'my_project' or './src/my_project'."
+        description = "Path to the project.  This should be a relative folder/directory, not a file.  Must be relative to the current working directory.  Example: 'my_project' or './src/my_project'."
     )]
     pub project_dir: PathBuf,
     #[schemars(description = "Command to run.  One of \"python\", \"pip\", \"uv\", \"pytest\"")]
@@ -59,7 +59,7 @@ pub struct PythonInput {
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct JavascriptInput {
     #[schemars(
-        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory. Example: 'my_project' or './src/my_project'."
+        description = "Path to the project.  This should be a relative folder/directory, not a file.  Must be relative to the current working directory. Example: 'my_project' or './src/my_project'."
     )]
     pub project_dir: PathBuf,
     #[schemars(description = "Command to run. One of \"node\", \"npm\", \"yarn\"")]
@@ -73,7 +73,7 @@ pub struct JavascriptInput {
 #[derive(Debug, schemars::JsonSchema, Deserialize)]
 pub struct RustInput {
     #[schemars(
-        description = "Path to the project.  This should be a folder/directory, not a file, and should be relative to the current working directory.  Example: 'my_project' or './src/my_project'."
+        description = "Path to the project.  This should be a relative folder/directory, not a file.  Must be relative to the current working directory.  Example: 'my_project' or './src/my_project'."
     )]
     pub project_dir: PathBuf,
     #[schemars(description = "Command to run.  \"cargo\" is the only valid command.")]
@@ -130,10 +130,10 @@ impl CodeCompiler {
     }
 
     #[tool(
-        description = "Execute Python code in an existing project directory. Use \
+        description = "Execute Python code in an existing project directory relative to current working directory. Use \
                            command 'python', 'pytest', or 'uv' to run a script, 'pip' or 'uv' to install dependencies. \
-                           Requires the project files to already exist in project_dir — \
-                           write the files first, then call this tool to run or test them. \
+                           Requires the project files to already exist in project_dir. \
+                           Write the files first, then call this tool to run or test them. \
                            State does not persist between calls."
     )]
     pub async fn run_python(
@@ -152,10 +152,10 @@ impl CodeCompiler {
     }
 
     #[tool(
-        description = "Execute Javascript code in an existing project directory. Use \
+        description = "Execute Javascript code in an existing project directory relative to current working directory. Use \
                        command 'node' to run a script, 'yarn' or 'npm' to install dependencies. \
-                       Requires the project files to already exist in project_dir — \
-                       write the files first, then call this tool to run or test them. \
+                       Requires the project files to already exist in project_dir. \
+                       Write the files first, then call this tool to run or test them. \
                        State does not persist between calls."
     )]
     pub async fn run_javascript(
@@ -173,10 +173,10 @@ impl CodeCompiler {
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
     #[tool(
-        description = "Execute Rust code in an existing project directory. Use \
+        description = "Execute Rust code in an existing project directory relative to current working directory. Use \
                    command 'cargo'. \
-                   Requires the project files to already exist in project_dir — \
-                   write the files first, then call this tool to run or test them. \
+                   Requires the project files to already exist in project_dir. \
+                   Write the files first, then call this tool to run or test them. \
                    State does not persist between calls."
     )]
     pub async fn run_rust(
@@ -212,10 +212,10 @@ impl CodeCompiler {
     }
 
     #[tool(
-        description = "Execute Python code in an existing project directory. Use \
+        description = "Execute Python code in an existing project directory relative to current working directory. Use \
                        command 'python', 'pytest', or 'uv' to run a script, 'pip' or 'uv' to install dependencies. \
-                       Requires the project files to already exist in project_dir — \
-                       write the files first, then call this tool to run or test them. \
+                       Requires the project files to already exist in project_dir. \
+                       Write the files first, then call this tool to run or test them. \
                        State does not persist between calls."
     )]
     pub async fn run_python(
@@ -233,11 +233,11 @@ impl CodeCompiler {
     }
 
     #[tool(
-        description = "Execute Javascript code in an existing project directory. Use \
-                   command 'node' to run a script, 'yarn' or 'npm' to install dependencies. \
-                   Requires the project files to already exist in project_dir — \
-                   write the files first, then call this tool to run or test them. \
-                   State does not persist between calls."
+        description = "Execute Javascript code in an existing project directory relative to current working directory. Use \
+                       command 'node' to run a script, 'yarn' or 'npm' to install dependencies. \
+                       Requires the project files to already exist in project_dir. \
+                       Write the files first, then call this tool to run or test them. \
+                       State does not persist between calls."
     )]
     pub async fn run_javascript(
         &self,
@@ -253,11 +253,11 @@ impl CodeCompiler {
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
     #[tool(
-        description = "Execute Rust code in an existing project directory. Use \
-               command 'cargo'. \
-               Requires the project files to already exist in project_dir — \
-               write the files first, then call this tool to run or test them. \
-               State does not persist between calls."
+        description = "Execute Rust code in an existing project directory relative to current working directory. Use \
+                   command 'cargo'. \
+                   Requires the project files to already exist in project_dir. \
+                   Write the files first, then call this tool to run or test them. \
+                   State does not persist between calls."
     )]
     pub async fn run_rust(
         &self,
