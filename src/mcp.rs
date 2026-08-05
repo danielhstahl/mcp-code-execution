@@ -198,7 +198,9 @@ impl CodeCompiler {
     #[tool(description = "get supported languages")]
     pub async fn get_supported_languages(&self) -> Result<CallToolResult, McpError> {
         let json_result = serde_json::to_string(&LANGUAGE).unwrap();
-        Ok(CallToolResult::success(vec![Content::text(json_result)]))
+        Ok(CallToolResult::success(vec![ContentBlock::text(
+            json_result,
+        )]))
     }
 }
 
