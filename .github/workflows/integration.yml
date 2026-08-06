@@ -39,7 +39,7 @@ jobs:
 
       - name: Test tool list
         run: |
-          tool_list=$(npx @modelcontextprotocol/inspector http://localhost:8000/mcp --cli --method tools/list)
+          tool_list=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/list)
           result=$(echo $tool_list | jq -r '.tools  | length')
           if [ $result != "4" ]; then
             echo "Assertion failed: $result"
@@ -119,7 +119,7 @@ jobs:
 
       - name: Test tool list
         run: |
-          tool_list=$(npx @modelcontextprotocol/inspector http://localhost:8000/mcp --cli --method tools/list)
+          tool_list=$(npx @modelcontextprotocol/inspector --cli http://localhost:8000/mcp --method tools/list)
           result=$(echo $tool_list | jq -r '.tools  | length')
           if [ $result != "4" ]; then
             echo "Assertion failed: $result"

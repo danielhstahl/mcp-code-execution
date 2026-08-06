@@ -6,7 +6,7 @@ use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler,
     handler::server::wrapper::Parameters,
     model::{
-        CallToolResult, Content, Implementation, InitializeRequestParams, InitializeResult,
+        CallToolResult, ContentBlock, Implementation, InitializeRequestParams, InitializeResult,
         ProtocolVersion, ServerCapabilities, ServerInfo,
     },
     schemars,
@@ -86,7 +86,7 @@ pub struct RustInput {
 
 fn convert_docker_output_to_tool_result(docker_output: DockerOutput) -> CallToolResult {
     let is_error = docker_output.is_error;
-    let json_content = Content::json(docker_output).unwrap();
+    let json_content = ContentBlock::json(docker_output).unwrap();
     if is_error {
         CallToolResult::error(vec![json_content])
     } else {
@@ -99,6 +99,7 @@ pub struct CodeCompiler {
     path: PathBuf,
 }
 
+#[cfg(feature = "docker")]
 fn sanitize_path(canonical_base_path: &PathBuf, sub_folder: &PathBuf) -> Result<PathBuf, McpError> {
     if sub_folder.is_absolute() {
         return Err(McpError::invalid_params(
@@ -197,7 +198,9 @@ impl CodeCompiler {
     #[tool(description = "get supported languages")]
     pub async fn get_supported_languages(&self) -> Result<CallToolResult, McpError> {
         let json_result = serde_json::to_string(&LANGUAGE).unwrap();
-        Ok(CallToolResult::success(vec![Content::text(json_result)]))
+        Ok(CallToolResult::success(vec![ContentBlock::text(
+            json_result,
+        )]))
     }
 }
 
@@ -276,7 +279,9 @@ impl CodeCompiler {
     #[tool(description = "Get languages supported by this MCP server")]
     pub async fn get_supported_languages(&self) -> Result<CallToolResult, McpError> {
         let json_result = serde_json::to_string(&LANGUAGE).unwrap();
-        Ok(CallToolResult::success(vec![Content::text(json_result)]))
+        Ok(CallToolResult::success(vec![ContentBlock::text(
+            json_result,
+        )]))
     }
 }
 
@@ -286,7 +291,7 @@ impl ServerHandler for CodeCompiler {
         ServerInfo::new(ServerCapabilities::builder()
             .enable_tools()
             .build()).with_instructions("This server provides compilation and code execution tools. Tools: run_python, run_javascript, run_rust, get_supported_languages.")
-            .with_server_info(Implementation::from_build_env()).with_protocol_version(ProtocolVersion::V_2025_06_18)
+            .with_server_info(Implementation::from_build_env()).with_protocol_version(ProtocolVersion::V_2026_07_28)
     }
 
     async fn initialize(
@@ -303,6 +308,7 @@ impl ServerHandler for CodeCompiler {
     }
 }
 
+#[cfg(feature = "docker")]
 #[cfg(test)]
 mod tests {
     use super::*;
