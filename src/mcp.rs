@@ -7,7 +7,7 @@ use rmcp::{
     handler::server::wrapper::Parameters,
     model::{
         CallToolResult, ContentBlock, Implementation, InitializeRequestParams, InitializeResult,
-        ProtocolVersion, ServerCapabilities, ServerInfo,
+        ProtocolVersion, ServerCapabilities, ServerConfig,
     },
     schemars,
     service::RequestContext,
@@ -287,8 +287,8 @@ impl CodeCompiler {
 
 #[tool_handler]
 impl ServerHandler for CodeCompiler {
-    fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(ServerCapabilities::builder()
+    fn get_info(&self) -> ServerConfig {
+        ServerConfig::new(ServerCapabilities::builder()
             .enable_tools()
             .build()).with_instructions("This server provides compilation and code execution tools. Tools: run_python, run_javascript, run_rust, get_supported_languages.")
             .with_server_info(Implementation::from_build_env()).with_protocol_version(ProtocolVersion::V_2026_07_28)
